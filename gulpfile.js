@@ -11,6 +11,8 @@ var gulp = require('gulp'),
     webpackDevMiddleware = require('webpack-dev-middleware'),
     webpackHotMiddleware = require('webpack-hot-middleware');
 
+var revCollector = require('gulp-rev-collector');
+
 
 //use webpack to manage all the resources in src/
 gulp.task('webpack', function (done) {
@@ -48,7 +50,7 @@ gulp.task('css', ['webpack', 'img'], function () {
     var mapFile = gulp.src("./dist/assets/rev-manifest.json");
     return gulp.src('./build/assets/css/*.css')
         .pipe(plugins.minifyCss())
-        .pipe(plugins.revReplace({manifest: mapFile}))
+        //.pipe(plugins.revReplace({manifest: mapFile}))
         .pipe(plugins.rev())
         .pipe(gulp.dest('dist/assets/css'))
         .pipe(plugins.rev.manifest('dist/assets/rev-manifest.json', {
@@ -61,8 +63,8 @@ gulp.task('css', ['webpack', 'img'], function () {
 gulp.task('img', ['webpack'], function () {
     return gulp.src('./build/assets/img/*.*')
         .pipe(plugins.imagemin({
-          progressive: true,
-          use: [pngquant({quality: '70-80'})]
+            progressive: true,
+            use: [pngquant({quality: '70-80'})]
         }))
         .pipe(plugins.rev())
         .pipe(gulp.dest('dist/assets/img'))
@@ -115,6 +117,7 @@ gulp.task('clean', function () {
         .pipe(plugins.clean());
 });
 
+
 gulp.task('replace', ['css', 'js', 'img'], function () {
     var mapFile = gulp.src("./dist/assets/rev-manifest.json");
     return gulp.src('./build/index.html')
@@ -122,9 +125,32 @@ gulp.task('replace', ['css', 'js', 'img'], function () {
         .pipe(gulp.dest('dist'));
 });
 
+gulp.task('replace-cdn', ['css', 'js', 'img'], function() {
+    gulp.src(['./dist/assets/*.json', './build/*.html'])   //- 读取 rev-manifest.json 文件以及需要进行css名替换的文件
+        .pipe(revCollector({
+            replaceReved: true,
+            dirReplacements: {
+                'assets/css/': '/dist/css/',
+                //'assets/js/': '/dist/js/',
+                'assets/js/': function (manifest_value) {
+                    return '//cdn' + (Math.floor(Math.random() * 9) + 1) + '.' + 'example.dot' + '/img/' + manifest_value;
+                }
+            }
+        }))
+        .pipe(gulp.dest('./dist'));                     //- 替换后的文件输出的目录
+});
+
+
 gulp.task('dist', ['clean'], function () {
     gulp.start('webpack', 'img', 'js', 'css', 'replace');
 });
+
+
+gulp.task('dist-cdn', ['clean'], function () {
+    gulp.start('webpack', 'img', 'js', 'css', 'replace-cdn');
+});
+
+
 
 gulp.task('help', function () {
     console.log('---------------------------------------------------------------');
