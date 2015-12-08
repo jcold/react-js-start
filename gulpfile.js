@@ -12,6 +12,7 @@ var gulp = require('gulp'),
     webpackHotMiddleware = require('webpack-hot-middleware');
 
 var revCollector = require('gulp-rev-collector');
+var qn = require("gulp-qn");
 
 
 //use webpack to manage all the resources in src/
@@ -150,6 +151,19 @@ gulp.task('dist-cdn', ['clean'], function () {
     gulp.start('webpack', 'img', 'js', 'css', 'replace-cdn');
 });
 
+
+gulp.task('publish-cdn', function(){
+    gulp.src('./dist/assets/**/*.*')
+        .pipe(qn({
+            qiniu: {
+                accessKey: '4zxzx2L8XVodROkDhK-p8Vcr7Dn-fqN9feC5Zghx',
+                secretKey: 'CXJp6zx-Z2-Y-9ITPmwJgmjc6vUNI0s9emhEVMSZ',
+                bucket: 'static2',
+                domain: 'http://7xoflc.com1.z0.glb.clouddn.com'
+            },
+            prefix: 'dev/assets/v1/'
+        }));
+});
 
 
 gulp.task('help', function () {
